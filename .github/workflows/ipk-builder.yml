@@ -1,0 +1,59 @@
+
+name: Build luci-app-easyclashtool
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - x86_64
+          - aarch64_generic
+          - arm_cortex-a7
+          - arm_cortex-a9
+          - arm_cortex-a53
+          - arm_cortex-a15_neon-vfpv4
+          - x86_geode
+          - riscv64_generic
+          - powerpc_8540
+          - octeon
+          - arc
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up dependencies
+      run: sudo apt-get update && sudo apt-get install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev python3-distutils rsync unzip zlib1g-dev
+
+    - name: Download and extract OpenWrt SDK
+      run: |
+        mkdir openwrt-sdk
+        cd openwrt-sdk
+        wget https://downloads.openwrt.org/releases/22.03.6/targets/${{ matrix.target }}/generic/openwrt-sdk-22.03.6-${{ matrix.target }}_gcc-11.2.0_musl.Linux-x86_64.tar.xz || exit 1
+        tar -xf openwrt-sdk-*.tar.xz --strip-components=1
+
+    - name: Copy luci-app-easyclashtool to SDK
+      run: |
+        cp -r ./luci-app-easyclashtool ./openwrt-sdk/package/
+
+    - name: Build package
+      run: |
+        cd openwrt-sdk
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+        make defconfig
+        make package/luci-app-easyclashtool/compile V=s
+
+    - name: Upload IPK
+      uses: actions/upload-artifact@v3
+      with:
+        name: luci-app-easyclashtool-${{ matrix.target }}
+        path: openwrt-sdk/bin/packages/**/luci-app-easyclashtool_*.ipk

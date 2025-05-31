@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+USE_PROCD=1
+START=99
+STOP=15
+
+start_service() {
+  echo "Starting Clash.Meta..."
+  /usr/share/easyclashtool/clash-meta -d /etc/easyclashtool &
+}
+
+stop_service() {
+  echo "Stopping Clash.Meta..."
+  killall clash-meta
+}

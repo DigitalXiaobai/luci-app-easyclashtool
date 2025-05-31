@@ -1,0 +1,2 @@
+#!/bin/sh
+echo 'This simulates Clash.Meta binary.'
